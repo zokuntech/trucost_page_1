@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiX, FiDownload, FiCheck, FiTag, FiSearch, FiLoader, FiCornerDownLeft } from 'react-icons/fi';
+import { FiX, FiCheck, FiTag, FiSearch, FiLoader, FiCornerDownLeft } from 'react-icons/fi';
 
 // Import placeholder images
 import barSoapImage from '../assets/bar-soap.png';
@@ -54,14 +54,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
 const HomePage: React.FC = () => {
   const [showPopup, setShowPopup] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState('');
+  const [_, setSelectedProduct] = useState('');
   const [currentSuggestion, setCurrentSuggestion] = useState('');
   const [submittedSuggestions, setSubmittedSuggestions] = useState<string[]>([]);
   const [availableSuggestions, setAvailableSuggestions] = useState<string[]>(allProductSuggestions);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [modalMessage, setModalMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Loading state for final submit
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const suggestionRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -89,6 +90,7 @@ const HomePage: React.FC = () => {
 
   const handleVote = (productName: string) => {
     setSelectedProduct(productName);
+    setModalMessage(`Thanks for your vote for ${productName}! Get notified when this product is unlocked and ready to purchase.`);
     setShowPopup(true);
   };
 
@@ -129,20 +131,20 @@ const HomePage: React.FC = () => {
 
   // NEW Handler for the FINAL Submit button
   const handleFinalSubmit = async () => {
-    if (submittedSuggestions.length === 0) return; // Should be disabled, but safety check
+    if (submittedSuggestions.length === 0) return;
 
-    setIsSubmitting(true); // Set loading state
+    setIsSubmitting(true);
     console.log("Submitting suggestions to API:", submittedSuggestions);
 
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5 seconds
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     console.log("API call successful!");
-    setIsSubmitting(false); // Reset loading state
+    setIsSubmitting(false);
     
-    setToastMessage("Suggestions submitted successfully!");
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    // Set modal message appropriate for asking for email after suggestions
+    setModalMessage("Thanks for your suggestions! Enter your email to get notified about new product updates.");
+    setShowPopup(true);
 
     // Clear the submitted list and restore available suggestions
     setSubmittedSuggestions([]);
@@ -214,7 +216,7 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* What Should We Add Next Section - Updated Input UI */}
-      <section className="mb-36 mt-12 max-w-3xl mx-auto text-center px-4">
+      <section className="mb-24 mt-12 max-w-3xl mx-auto text-center px-4">
         <h2 className="text-5xl font-bold mb-6">What Should We Add Next?</h2>
         <p className="text-xl mb-8">
           Suggest products below. Add multiple, then submit your list. (Press Enter to add)
@@ -329,7 +331,7 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="my-20 max-w-4xl mx-auto">
+      <section className="mb-20 max-w-4xl mx-auto">
         <h2 className="text-6xl font-bold mb-16 text-center">How It Works</h2>
         
         <div className="space-y-16 relative">
@@ -406,10 +408,10 @@ const HomePage: React.FC = () => {
         </div>
       )}
 
-      {/* Popup Modal */}
+      {/* Popup Modal - Now shows same content always */}
       {showPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-lg shadow-lg p-6 md:p-8 max-w-md w-full relative">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-lg shadow-lg p-6 md:p-8 max-w-md w-full relative text-gray-900">
             <button 
               onClick={() => setShowPopup(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
@@ -418,20 +420,19 @@ const HomePage: React.FC = () => {
             </button>
             
             <div className="text-center mb-6">
-              <div className="mb-2 text-green-600 flex justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              {/* Success Icon */}
+              <div className="mb-4 text-green-600 flex justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-1 text-gray-900">Thanks for your vote!</h3>
-              <p className="text-gray-600 mb-4">
-                You voted for {selectedProduct}
-              </p>
-              <p className="text-gray-800 font-medium">
-                Get notified when this product is unlocked and ready to purchase.
+              {/* Display dynamic message */}
+              <p className="text-lg font-medium">
+                {modalMessage}
               </p>
             </div>
             
+            {/* Email Input Section - Always rendered now */}
             <div className="space-y-4">
               <input 
                 type="email" 
@@ -439,13 +440,13 @@ const HomePage: React.FC = () => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
               />
               <button 
-                className="w-full bg-gray-900 text-white py-3 rounded-lg font-medium"
-                onClick={() => setShowPopup(false)}
+                className="w-full bg-gray-900 text-white py-3 rounded-lg font-medium hover:bg-gray-700"
+                onClick={() => setShowPopup(false)} // Add actual notification logic here
               >
                 Notify Me
               </button>
               <button 
-                className="w-full text-gray-600 py-2 rounded-lg font-medium text-sm"
+                className="w-full text-gray-600 py-2 rounded-lg font-medium text-sm hover:bg-gray-100"
                 onClick={() => setShowPopup(false)}
               >
                 No thanks
