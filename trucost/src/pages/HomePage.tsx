@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { FiX, FiDownload, FiCheck } from 'react-icons/fi';
+import React, { useState, useEffect, useRef } from 'react';
+import { FiX, FiDownload, FiCheck, FiTag, FiSearch, FiLoader } from 'react-icons/fi';
 
 // Import placeholder images
 import barSoapImage from '../assets/bar-soap.png';
 import lipBalmImage from '../assets/lotion-bottle.png';
 import cleanerImage from '../assets/vera.png';
+
+// Import product suggestions from categories
+import productCategories from '../data/productCategories.json';
+
+// Flatten the suggestions into a single array for filtering
+const allProductSuggestions = Object.values(productCategories).flat().sort(); // Initial master list, sorted
 
 // ProductCard Component
 interface ProductCardProps {
@@ -49,26 +55,103 @@ const ProductCard: React.FC<ProductCardProps> = ({
 const HomePage: React.FC = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState('');
-  const [productSuggestion, setProductSuggestion] = useState('');
+  const [currentSuggestion, setCurrentSuggestion] = useState('');
+  const [submittedSuggestions, setSubmittedSuggestions] = useState<string[]>([]);
+  const [availableSuggestions, setAvailableSuggestions] = useState<string[]>(allProductSuggestions);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Loading state for final submit
+  
+  const suggestionRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Filter available suggestions based on input
+  const filteredSuggestions = currentSuggestion
+    ? availableSuggestions.filter(
+        (item) =>
+          item.toLowerCase().includes(currentSuggestion.toLowerCase())
+      ).slice(0, 8) // Limit to 8 suggestions
+    : [];
+
+  // Re-add useEffect for click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleVote = (productName: string) => {
     setSelectedProduct(productName);
     setShowPopup(true);
   };
 
-  const handleSuggestionSubmit = () => {
-    if (productSuggestion.trim()) {
-      setToastMessage(`Thanks for suggesting "${productSuggestion}"!`);
+  // Function to add a suggestion badge (minor update for clarity)
+  const addSuggestionBadge = (suggestion: string) => {
+    const trimmed = suggestion.trim();
+    if (trimmed && !submittedSuggestions.includes(trimmed)) {
+      setSubmittedSuggestions([...submittedSuggestions, trimmed]);
+      if (availableSuggestions.includes(trimmed)) {
+        setAvailableSuggestions(availableSuggestions.filter(s => s !== trimmed));
+      }
+      setCurrentSuggestion(''); 
+      setShowSuggestions(false);
+    } else if (submittedSuggestions.includes(trimmed)) {
+      setToastMessage(`"${trimmed}" already suggested!`);
       setShowToast(true);
-      setProductSuggestion('');
-      
-      // Hide toast after 3 seconds
-      setTimeout(() => {
-        setShowToast(false);
-      }, 3000);
+      setTimeout(() => setShowToast(false), 3000);
+      setCurrentSuggestion(''); 
+      setShowSuggestions(false);
     }
+  };
+
+  // Handler for the button NEXT TO the input (renamed)
+  const handleAddSuggestionFromInput = () => {
+    addSuggestionBadge(currentSuggestion);
+  };
+
+  // Handler for selecting from the dropdown
+  const handleSuggestionSelect = (suggestion: string) => {
+    addSuggestionBadge(suggestion);
+    inputRef.current?.focus(); 
+  };
+
+  // Updated removeSuggestion to potentially add back to available list
+  const removeSuggestion = (suggestionToRemove: string) => {
+    setSubmittedSuggestions(submittedSuggestions.filter(s => s !== suggestionToRemove));
+    // Check if it was an original suggestion and not already available
+    if (allProductSuggestions.includes(suggestionToRemove) && !availableSuggestions.includes(suggestionToRemove)) {
+      // Add back and re-sort
+      setAvailableSuggestions([...availableSuggestions, suggestionToRemove].sort());
+    }
+  };
+
+  // NEW Handler for the FINAL Submit button
+  const handleFinalSubmit = async () => {
+    if (submittedSuggestions.length === 0) return; // Should be disabled, but safety check
+
+    setIsSubmitting(true); // Set loading state
+    console.log("Submitting suggestions to API:", submittedSuggestions);
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5 seconds
+
+    console.log("API call successful!");
+    setIsSubmitting(false); // Reset loading state
+    
+    setToastMessage("Suggestions submitted successfully!");
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+
+    // Clear the submitted list and restore available suggestions
+    setSubmittedSuggestions([]);
+    setAvailableSuggestions(allProductSuggestions); 
   };
 
   // Product data
@@ -135,28 +218,122 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* What Should We Add Next Section */}
+      {/* What Should We Add Next Section - Updated Final Submit Logic */}
       <section className="mb-36 mt-12 max-w-3xl mx-auto text-center px-4">
         <h2 className="text-5xl font-bold mb-6">What Should We Add Next?</h2>
         <p className="text-xl mb-8">
-          We're building Trucost with you. Let us know what essentials
-          you'd like to buy at factory prices.
+          Suggest products below. Add multiple, then submit your list.
         </p>
-        <div className="max-w-xl mx-auto flex items-center">
-          <input 
-            type="text" 
-            placeholder="What product would you love to see?" 
-            className="bg-black w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
-            value={productSuggestion}
-            onChange={(e) => setProductSuggestion(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSuggestionSubmit()}
-          />
-          <button 
-            className="bg-white text-black py-3 h-12 px-8 rounded-md ml-4 font-medium text-lg"
-            onClick={handleSuggestionSubmit}
-          >
-            Submit
-          </button>
+        <div className="max-w-xl mx-auto">
+          <div className="relative" ref={suggestionRef}> 
+            <div className="flex items-center mb-4">
+              <div className="relative flex-grow">
+                <input 
+                  ref={inputRef}
+                  type="text" 
+                  placeholder="Suggest a product..." 
+                  className="bg-gray-900 text-white w-full px-4 py-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a3b18a] placeholder-gray-500"
+                  value={currentSuggestion}
+                  onChange={(e) => {
+                    setCurrentSuggestion(e.target.value);
+                    setShowSuggestions(e.target.value.length > 0 && availableSuggestions.some(s => s.toLowerCase().includes(e.target.value.toLowerCase())));
+                  }}
+                  onFocus={() => {
+                    // Show suggestions on focus if input has text and matches are available
+                    if (currentSuggestion.length > 0 && filteredSuggestions.length > 0) {
+                      setShowSuggestions(true);
+                    }
+                  }}
+                  onKeyPress={(e) => {
+                     if (e.key === 'Enter') {
+                       handleAddSuggestionFromInput();
+                     }
+                  }}
+                  disabled={isSubmitting} // Disable input while submitting
+                />
+                {/* Clear Button */}
+                {currentSuggestion.length > 0 && !isSubmitting && (
+                  <button 
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                    onClick={() => {
+                      setCurrentSuggestion('');
+                      setShowSuggestions(false);
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    <FiX className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+              {/* ADD Button */} 
+              <button 
+                className="bg-[#a3b18a] text-black py-3 h-12 px-6 rounded-md ml-4 font-medium text-lg disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                onClick={handleAddSuggestionFromInput} // Use specific add handler
+                disabled={!currentSuggestion.trim() || isSubmitting} // Disable based on input or submitting state
+              >
+                Add
+              </button>
+            </div>
+            
+            {/* Suggestion Dropdown */} 
+            {showSuggestions && filteredSuggestions.length > 0 && (
+              <div 
+                className="absolute z-10 mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto text-left" 
+                style={{ width: inputRef.current ? inputRef.current.offsetWidth + 'px' : '100%' }}
+              >
+                {filteredSuggestions.map((suggestion, index) => (
+                  <div 
+                    key={index}
+                    className="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center text-white"
+                    onClick={() => handleSuggestionSelect(suggestion)}
+                  >
+                    <FiSearch className="mr-3 text-gray-400" />
+                    {suggestion}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Display Badges */} 
+          <div className="flex flex-wrap gap-2 justify-center mt-4 min-h-[36px]"> {/* Added min-height */} 
+            {submittedSuggestions.map((suggestion, index) => (
+              <div 
+                key={index}
+                className="bg-gray-700 text-white text-sm font-medium px-3 py-1 rounded-full flex items-center gap-2 cursor-default"
+              >
+                <FiTag className="w-4 h-4 text-gray-400" />
+                <span>{suggestion}</span>
+                <button 
+                  onClick={() => !isSubmitting && removeSuggestion(suggestion)} // Prevent removal during submit
+                  className={`text-gray-400 hover:text-white ml-1 ${isSubmitting ? 'cursor-not-allowed' : ''}`}
+                  aria-label={`Remove ${suggestion}`}
+                  disabled={isSubmitting}
+                >
+                  <FiX className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* NEW Final Submit Button */} 
+          {submittedSuggestions.length > 0 && (
+            <div className="mt-6">
+              <button 
+                className="bg-green-600 hover:bg-green-700 text-white py-3 px-8 rounded-lg font-medium text-lg disabled:opacity-50 disabled:cursor-wait w-full flex items-center justify-center gap-2"
+                onClick={handleFinalSubmit}
+                disabled={isSubmitting} // Disable only during submission
+              >
+                {isSubmitting ? (
+                  <>
+                    <FiLoader className="animate-spin h-5 w-5" /> Submitting...
+                  </>
+                ) : (
+                  `Submit ${submittedSuggestions.length} Suggestion${submittedSuggestions.length > 1 ? 's' : ''}`
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
