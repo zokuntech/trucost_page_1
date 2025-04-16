@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiX, FiDownload, FiCheck, FiTag, FiSearch, FiLoader } from 'react-icons/fi';
+import { FiX, FiDownload, FiCheck, FiTag, FiSearch, FiLoader, FiCornerDownLeft } from 'react-icons/fi';
 
 // Import placeholder images
 import barSoapImage from '../assets/bar-soap.png';
@@ -111,11 +111,6 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // Handler for the button NEXT TO the input (renamed)
-  const handleAddSuggestionFromInput = () => {
-    addSuggestionBadge(currentSuggestion);
-  };
-
   // Handler for selecting from the dropdown
   const handleSuggestionSelect = (suggestion: string) => {
     addSuggestionBadge(suggestion);
@@ -218,68 +213,64 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* What Should We Add Next Section - Updated Final Submit Logic */}
+      {/* What Should We Add Next Section - Updated Input UI */}
       <section className="mb-36 mt-12 max-w-3xl mx-auto text-center px-4">
         <h2 className="text-5xl font-bold mb-6">What Should We Add Next?</h2>
         <p className="text-xl mb-8">
-          Suggest products below. Add multiple, then submit your list.
+          Suggest products below. Add multiple, then submit your list. (Press Enter to add)
         </p>
         <div className="max-w-xl mx-auto">
-          <div className="relative" ref={suggestionRef}> 
-            <div className="flex items-center mb-4">
-              <div className="relative flex-grow">
-                <input 
-                  ref={inputRef}
-                  type="text" 
-                  placeholder="Suggest a product..." 
-                  className="bg-gray-900 text-white w-full px-4 py-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a3b18a] placeholder-gray-500"
-                  value={currentSuggestion}
-                  onChange={(e) => {
-                    setCurrentSuggestion(e.target.value);
-                    setShowSuggestions(e.target.value.length > 0 && availableSuggestions.some(s => s.toLowerCase().includes(e.target.value.toLowerCase())));
-                  }}
-                  onFocus={() => {
-                    // Show suggestions on focus if input has text and matches are available
-                    if (currentSuggestion.length > 0 && filteredSuggestions.length > 0) {
-                      setShowSuggestions(true);
-                    }
-                  }}
-                  onKeyPress={(e) => {
-                     if (e.key === 'Enter') {
-                       handleAddSuggestionFromInput();
-                     }
-                  }}
-                  disabled={isSubmitting} // Disable input while submitting
+          {/* Container for input, dropdown, and badges */} 
+          <div className="relative mb-4" ref={suggestionRef}> 
+            {/* Input field container - Now takes full width */} 
+            <div className="relative"> 
+              <input 
+                ref={inputRef}
+                type="text" 
+                placeholder="Suggest a product and press Enter..." 
+                className="bg-gray-900 text-white w-full px-4 py-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a3b18a] placeholder-gray-500 pr-10" // Added right padding for icon
+                value={currentSuggestion}
+                onChange={(e) => {
+                  setCurrentSuggestion(e.target.value);
+                  // Logic to show/hide suggestions
+                  setShowSuggestions(e.target.value.length > 0 && availableSuggestions.some(s => s.toLowerCase().includes(e.target.value.toLowerCase())));
+                }}
+                onFocus={() => {
+                  // Show suggestions on focus if input has text and matches are available
+                  if (currentSuggestion.length > 0 && filteredSuggestions.length > 0) {
+                    setShowSuggestions(true);
+                  }
+                }}
+                onKeyPress={(e) => {
+                  // Use addSuggestionBadge directly on Enter
+                  if (e.key === 'Enter') {
+                    addSuggestionBadge(currentSuggestion);
+                  }
+                }}
+                disabled={isSubmitting} // Disable input while submitting
+              />
+              {/* Enter Icon Indicator */} 
+              {currentSuggestion.trim().length > 0 && !isSubmitting && (
+                <FiCornerDownLeft 
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" // Icon indicating Enter
+                  title="Press Enter to add suggestion"
                 />
-                {/* Clear Button */}
-                {currentSuggestion.length > 0 && !isSubmitting && (
-                  <button  
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-                    onClick={() => {
-                      setCurrentSuggestion('');
-                      setShowSuggestions(false);
-                      inputRef.current?.focus();
-                    }}
-                  >
-                    <FiX className="h-5 w-5" />
-                  </button>
-                )}
-              </div>
-              {/* ADD Button */} 
-              <button 
-                className="bg-white text-black py-3 h-12 px-6 rounded-md ml-4 font-medium text-lg disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                onClick={handleAddSuggestionFromInput} // Use specific add handler
-                disabled={!currentSuggestion.trim() || isSubmitting} // Disable based on input or submitting state
-              >
-                Add
-              </button>
+              )}
+              {/* Clear Button - Keep if desired, might be redundant with Enter icon 
+              {currentSuggestion.length > 0 && !isSubmitting && (
+                <button  
+                  className="absolute right-10 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white" // Adjusted position if keeping
+                  onClick={() => { ... }}
+                >
+                  <FiX className="h-5 w-5" />
+                </button>
+              )} */} 
             </div>
             
-            {/* Suggestion Dropdown */} 
+            {/* Suggestion Dropdown (Positioned relative to the input container) */} 
             {showSuggestions && filteredSuggestions.length > 0 && (
               <div 
-                className="absolute z-10 mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto text-left" 
-                style={{ width: inputRef.current ? inputRef.current.offsetWidth + 'px' : '100%' }}
+                className="absolute z-10 mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto text-left w-full" // Set width to 100% of parent
               >
                 {filteredSuggestions.map((suggestion, index) => (
                   <div 
