@@ -253,7 +253,7 @@ const HomePage: React.FC = () => {
                 />
                 {/* Clear Button */}
                 {currentSuggestion.length > 0 && !isSubmitting && (
-                  <button 
+                  <button  
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
                     onClick={() => {
                       setCurrentSuggestion('');
@@ -267,7 +267,7 @@ const HomePage: React.FC = () => {
               </div>
               {/* ADD Button */} 
               <button 
-                className="bg-[#a3b18a] text-black py-3 h-12 px-6 rounded-md ml-4 font-medium text-lg disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                className="bg-white text-black py-3 h-12 px-6 rounded-md ml-4 font-medium text-lg disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 onClick={handleAddSuggestionFromInput} // Use specific add handler
                 disabled={!currentSuggestion.trim() || isSubmitting} // Disable based on input or submitting state
               >
