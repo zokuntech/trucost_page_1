@@ -1,7 +1,7 @@
 'use client'; // Required for components using hooks
 
 import React, { useState, useEffect, useRef } from 'react';
-import { FiX, FiCheck, FiTag, FiSearch, FiLoader, FiCornerDownLeft } from 'react-icons/fi';
+import { FiX, FiTag, FiSearch, FiLoader, FiCornerDownLeft } from 'react-icons/fi';
 // Note: FiDownload was removed from imports as the button was commented out
 
 // Import placeholder images (Assuming assets folder is at project root)
@@ -11,6 +11,7 @@ import cleanerImage from '@/public/assets/vera.png';
 
 // Import product suggestions (Assuming data folder is at project root)
 import productCategories from '@/app/data/productCategories.json';
+import { StaticImageData } from 'next/image';
 
 // Flatten the suggestions into a single array for filtering
 const allProductSuggestions = Object.values(productCategories).flat().sort() as string[]; 
@@ -18,7 +19,7 @@ const allProductSuggestions = Object.values(productCategories).flat().sort() as 
 // --- ProductCard Component --- 
 interface ProductCardProps {
   name: string;
-  image: any; // Using any for now due to static import type complexity
+  image: StaticImageData;
   description: string;
   votesCount: number;
   votesNeeded: number;
@@ -88,6 +89,7 @@ export default function Page() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
+    console.log("selectedProduct", selectedProduct);
   }, []);
 
   const handleVote = (productName: string) => {
@@ -313,7 +315,7 @@ export default function Page() {
               { num: 2, title: "We Source from U.S. Manufacturers", desc: "No middlemen. No hidden costs. Just real products at real cost." },
               { num: 3, title: "You Pay the Manufacturing Price", desc: "We charge a small platform fee (15–30%)—that's it." },
               { num: 4, title: "You Get Your Order. Fast. Fair. Simple.", desc: "Free shipping over $50. Or pick it up when we open our warehouse model." }
-            ].map((step, index) => (
+            ].map((step) => (
               <div key={step.num} className="relative flex items-start gap-8 pl-16 md:pl-20">
                 <div className="absolute left-0 top-0">
                   <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-black text-white border-2 border-white flex items-center justify-center text-2xl font-bold z-10">
