@@ -24,9 +24,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <head>
+        <title>Factory Direct Pricing</title>
+         {/* Favicon links can go here */}
+         <link rel="icon" href="/icon.png" sizes="any" />
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white`}>
         {children}
       </body>
     </html>

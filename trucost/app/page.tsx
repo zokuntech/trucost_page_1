@@ -5,9 +5,10 @@ import { FiX, FiTag, FiSearch, FiLoader, FiCornerDownLeft } from 'react-icons/fi
 // Note: FiDownload was removed from imports as the button was commented out
 
 // Import placeholder images (Assuming assets folder is at project root)
-import barSoapImage from '@/public/assets/bar-soap.png'; 
-import lipBalmImage from '@/public/assets/lotion-bottle.png';
-import cleanerImage from '@/public/assets/vera.png';
+import barSoapImage from '@/public/assets/soap.png'; 
+import lipBalmImage from '@/public/assets/lotion.png';
+import cleanerImage from '@/public/assets/aloe_vera.png';
+import itemsGridImage from '@/public/assets/items.png'; // Import the new grid image
 
 // Import product suggestions (Assuming data folder is at project root)
 import productCategories from '@/app/data/productCategories.json';
@@ -35,18 +36,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onVote
 }) => {
   return (
-    <div className="border border-white rounded-lg p-6 border-2 flex flex-col items-center text-white">
-        {/* Using standard img tag for static imports */}
-        <img src={image.src} alt={name} className="h-48 w-48 object-contain" />
+    <div className="border border-gray-300 rounded-lg p-6 flex flex-col items-center text-black shadow-sm">
+        <img src={image.src} alt={name} className="h-48 w-48 object-contain mb-4" />
       <h3 className="text-xl font-semibold mb-1">{name}</h3>
-      <p className="text-sm text-gray-400 text-center mb-6" dangerouslySetInnerHTML={{ __html: description.replace(/\\n/g, '<br />') }} />
+      <p className="text-sm text-gray-600 text-center mb-6" dangerouslySetInnerHTML={{ __html: description.replace(/\\n/g, '<br />') }} />
       <button 
-        className="bg-[#e0e0e0] text-black py-2 px-8 rounded-full font-medium mb-4"
+        className="bg-[#e0e0e0] text-black py-2 px-8 rounded-full font-semibold mb-4 hover:bg-gray-300"
         onClick={() => onVote(name)}
       >
         Vote
       </button>
-      <div className="text-sm text-gray-400">
+      <div className="text-sm text-gray-500">
         <span>{votesCount}</span> of {votesNeeded} needed to unlock
       </div>
     </div>
@@ -172,29 +172,44 @@ export default function Page() {
   ];
 
   return (
-    <main className="min-h-screen text-white px-6 md:px-8 py-8 bg-black"> {/* Added bg-black here */} 
-      {/* Header */}
-      <header className="flex justify-between items-center mb-14">
-        <div className="text-2xl font-medium">Trucost</div>
-        {/* Removed download button */}
+    <main className="min-h-screen text-black px-6 md:px-8 py-8 bg-white">
+      <header className="flex justify-between items-center  max-w-7xl mx-auto">
+        <div className="text-2xl font-bold">Trucost</div>
       </header>
 
-      <section className="mt-14 mb-12 max-w-3xl mx-auto text-center">
-        <h1 className="text-5xl md:text-5xl font-bold leading-tight mb-4 capitalize">
-            Pay what it costs. <br />
-            Not what they mark it up to.
-        </h1>
-        <p className="text-xl mb-8">
-          Trucost shows you the real cost of everyday goods<br />
-          direct from U.S. manufacturers. No retail markup.
-        </p>
-        {/* <button className="bg-[#a3b18a] text-black py-3 px-8 rounded-full font-medium text-lg">
-          Learn more
-        </button> */}
+      <section className="max-w-6xl mx-auto mb-20"> 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className="text-center md:text-left">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-5">
+              Shop Smarter.<br /> Spend Less.
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-600 mb-8">
+              High-quality everyday essentials<br />direct from the source.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+              <button className="bg-black text-white py-3 px-6 rounded-lg font-semibold text-lg hover:bg-gray-800 cursor-pointer">
+                Shop Top Picks
+              </button>
+              <button className="border border-gray-300 text-black py-3 px-6 rounded-lg font-semibold text-lg hover:bg-gray-100 cursor-pointer">
+                How it Works
+              </button>
+            </div>
+          </div>
+
+          <div className="relative">
+            <img 
+              src={itemsGridImage.src} 
+              alt="Grid of product item illustrations" 
+              className="rounded-lg object-cover w-full h-auto" 
+            />
+          </div>
+        </div>
       </section>
+      {/* --- End NEW Hero Section --- */} 
 
       {/* Products Section */}
-      <section className="mb-20">
+      <section className="mb-28 pt-16">
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Featured Products</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-4 md:px-8">
           {products.map((product) => (
             <ProductCard
@@ -207,7 +222,7 @@ export default function Page() {
       </section>
 
       {/* What Should We Add Next Section */}
-      <section className="mb-36 max-w-3xl mx-auto text-center px-4">
+      <section className="mb-20 max-w-3xl mx-auto text-center px-4">
          <h2 className="text-4xl font-bold mb-6">What Should We Add Next?</h2>
          <p className="text-xl mb-8">
            Suggest products below. Add multiple, then submit your list. (Press Enter to add)
@@ -219,7 +234,7 @@ export default function Page() {
                 ref={inputRef}
                 type="text" 
                 placeholder="Suggest a product and press Enter..." 
-                className="bg-gray-900 text-white w-full px-4 py-3 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a3b18a] placeholder-gray-500 pr-10"
+                className="bg-white text-black w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a3b18a] placeholder-gray-500 pr-10"
                 value={currentSuggestion}
                 onChange={(e) => {
                   setCurrentSuggestion(e.target.value);
@@ -239,22 +254,22 @@ export default function Page() {
               />
               {currentSuggestion.trim().length > 0 && !isSubmitting && (
                 <FiCornerDownLeft 
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none"
                   title="Press Enter to add suggestion"
                 />
               )}
             </div>
             {showSuggestions && filteredSuggestions.length > 0 && (
               <div 
-                className="absolute z-10 mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto text-left w-full"
+                className="absolute z-10 mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto text-left w-full"
               >
                 {filteredSuggestions.map((suggestion, index) => (
                   <div 
                     key={index}
-                    className="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center text-white"
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center text-black"
                     onClick={() => handleSuggestionSelect(suggestion)}
                   >
-                    <FiSearch className="mr-3 text-gray-400" />
+                    <FiSearch className="mr-3 text-gray-500" />
                     {suggestion}
                   </div>
                 ))}
@@ -267,13 +282,13 @@ export default function Page() {
             {submittedSuggestions.map((suggestion, index) => (
               <div 
                 key={index}
-                className="bg-gray-700 text-white text-sm font-medium px-3 py-1 rounded-full flex items-center gap-2 cursor-default"
+                className="bg-gray-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-full flex items-center gap-2 cursor-default"
               >
-                <FiTag className="w-4 h-4 text-gray-400" />
+                <FiTag className="w-4 h-4 text-gray-500" />
                 <span>{suggestion}</span>
                 <button 
                   onClick={() => !isSubmitting && removeSuggestion(suggestion)}
-                  className={`text-gray-400 hover:text-white ml-1 ${isSubmitting ? 'cursor-not-allowed' : ''}`}
+                  className={`text-gray-500 hover:text-black ml-1 ${isSubmitting ? 'cursor-not-allowed' : ''}`}
                   aria-label={`Remove ${suggestion}`}
                   disabled={isSubmitting}
                 >
@@ -308,7 +323,7 @@ export default function Page() {
       <section className="my-20 max-w-4xl mx-auto px-4">
         <h2 className="text-4xl font-bold mb-16 text-center">How It Works</h2>
         <div className="relative">
-          <div className="absolute left-8 top-8 bottom-8 w-0.5 bg-gray-700 transform -translate-x-1/2 hidden md:block"></div>
+          <div className="absolute left-8 top-8 bottom-8 w-0.5 bg-gray-300 transform -translate-x-1/2 hidden md:block"></div>
           <div className="space-y-16">
             {[ 
               { num: 1, title: "You Vote", desc: "Choose the essentials you want stocked—bar soap, lotion, cleaning products, etc." },
@@ -318,13 +333,13 @@ export default function Page() {
             ].map((step) => (
               <div key={step.num} className="relative flex items-start gap-8 pl-16 md:pl-20">
                 <div className="absolute left-0 top-0">
-                  <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-black text-white border-2 border-white flex items-center justify-center text-2xl font-bold z-10">
+                  <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-white text-black border-2 border-black flex items-center justify-center text-2xl font-bold z-10">
                     {step.num}
                   </div>
                 </div>
                 <div className="pt-1">
                   <h3 className="text-2xl md:text-3xl font-bold mb-3">{step.title}</h3>
-                  <p className="text-lg md:text-xl text-gray-300">{step.desc}</p>
+                  <p className="text-lg md:text-xl text-gray-700">{step.desc}</p>
                 </div>
               </div>
             ))}
@@ -341,9 +356,9 @@ export default function Page() {
           <input 
             type="email" 
             placeholder="Enter your email" 
-            className="bg-gray-900 text-white placeholder-gray-500 border border-gray-700 rounded-lg px-4 py-3 w-full sm:w-auto flex-grow focus:outline-none focus:ring-2 focus:ring-[#a3b18a]"
+            className="bg-white text-black placeholder-gray-500 border border-gray-300 rounded-lg px-4 py-3 w-full sm:w-auto flex-grow focus:outline-none focus:ring-2 focus:ring-[#a3b18a]"
           />
-          <button className="bg-[#a3b18a] text-black py-3 px-6 rounded-lg font-medium">
+          <button className="bg-[#a3b18a] text-black py-3 px-6 rounded-lg font-medium hover:bg-[#8a9a5b]">
             Sign Up
           </button>
         </div>
