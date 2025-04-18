@@ -11,23 +11,25 @@ import cleanerImage from '@/public/assets/aloe_vera.png';
 import itemsGridImage from '@/public/assets/items.png'; // Import the new grid image
 
 // Import product suggestions (Assuming data folder is at project root)
-import productCategories from '@/app/data/productCategories.json';
-import { StaticImageData } from 'next/image';
+import { allProductSuggestions as productSuggestions, expandedProductCategories } from './data/productSuggestions';
+import { ProductSuggestion } from './types/products';
 
-// Flatten the suggestions into a single array for filtering
-const allProductSuggestions = Object.values(productCategories).flat().sort() as string[]; 
+// Remove incorrect type casting
+const allProductSuggestions = productSuggestions;
 
 // --- ProductCard Component --- 
 interface ProductCardProps {
+  id: string;
   name: string;
-  image: StaticImageData;
+  image: any; // Using any temporarily for image type
   description: string;
   votesCount: number;
   votesNeeded: number;
-  onVote: (productName: string) => void;
+  onVote: (product: ProductSuggestion) => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
+  id,
   name,
   image,
   description,
@@ -35,14 +37,20 @@ const ProductCard: React.FC<ProductCardProps> = ({
   votesNeeded,
   onVote
 }) => {
+  const product: ProductSuggestion = {
+    id,
+    name,
+    category: description
+  };
+
   return (
     <div className="border border-gray-300 rounded-lg p-6 flex flex-col items-center text-black shadow-sm">
-        <img src={image.src} alt={name} className="h-48 w-48 object-contain mb-4" />
+      <img src={image.src} alt={name} className="h-48 w-48 object-contain mb-4" />
       <h3 className="text-xl font-semibold mb-1">{name}</h3>
       <p className="text-sm text-gray-600 text-center mb-6" dangerouslySetInnerHTML={{ __html: description.replace(/\\n/g, '<br />') }} />
       <button 
         className="bg-[#e0e0e0] text-black py-2 px-8 rounded-full font-semibold mb-4 hover:bg-gray-300"
-        onClick={() => onVote(name)}
+        onClick={() => onVote(product)}
       >
         Vote
       </button>
@@ -57,15 +65,16 @@ const ProductCard: React.FC<ProductCardProps> = ({
 // --- Main Page Component --- 
 export default function Page() {
   const [showPopup, setShowPopup] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(''); 
+  const [selectedProduct, setSelectedProduct] = useState<ProductSuggestion | null>(null); 
   const [currentSuggestion, setCurrentSuggestion] = useState('');
-  const [submittedSuggestions, setSubmittedSuggestions] = useState<string[]>([]);
-  const [availableSuggestions, setAvailableSuggestions] = useState<string[]>(allProductSuggestions);
+  const [submittedSuggestions, setSubmittedSuggestions] = useState<ProductSuggestion[]>([]);
+  const [availableSuggestions, setAvailableSuggestions] = useState<ProductSuggestion[]>(allProductSuggestions);
   const [showToast, setShowToast] = useState(false); 
   const [toastMessage, setToastMessage] = useState(''); 
   const [modalMessage, setModalMessage] = useState(''); 
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false); 
+  const [isSubmittingVote, setIsSubmittingVote] = useState(false);
   
   const suggestionRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null); 
@@ -74,7 +83,8 @@ export default function Page() {
   const filteredSuggestions = currentSuggestion
     ? availableSuggestions.filter(
         (item) =>
-          item.toLowerCase().includes(currentSuggestion.toLowerCase())
+          item.name.toLowerCase().includes(currentSuggestion.toLowerCase()) ||
+          item.category.toLowerCase().includes(currentSuggestion.toLowerCase())
       ).slice(0, 8)
     : [];
 
@@ -92,63 +102,10 @@ export default function Page() {
     console.log("selectedProduct", selectedProduct);
   }, []);
 
-  const handleVote = (productName: string) => {
-    setSelectedProduct(productName);
-    setModalMessage(`Thanks for your vote for ${productName}! Get notified when this product is unlocked and ready to purchase.`);
-    setShowPopup(true);
-  };
-
-  // Function to add a suggestion badge
-  const addSuggestionBadge = (suggestion: string) => {
-    const trimmed = suggestion.trim();
-    if (trimmed && !submittedSuggestions.includes(trimmed)) {
-      setSubmittedSuggestions([...submittedSuggestions, trimmed]);
-      if (availableSuggestions.includes(trimmed)) {
-        setAvailableSuggestions(availableSuggestions.filter(s => s !== trimmed));
-      }
-      setCurrentSuggestion(''); 
-      setShowSuggestions(false);
-    } else if (submittedSuggestions.includes(trimmed)) {
-      // Use toast for duplicate error
-      setToastMessage(`"${trimmed}" already suggested!`);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-      setCurrentSuggestion(''); 
-      setShowSuggestions(false);
-    }
-  };
-
-  // Handler for selecting from the dropdown
-  const handleSuggestionSelect = (suggestion: string) => {
-    addSuggestionBadge(suggestion);
-    inputRef.current?.focus(); 
-  };
-
-  // Updated removeSuggestion
-  const removeSuggestion = (suggestionToRemove: string) => {
-    setSubmittedSuggestions(submittedSuggestions.filter(s => s !== suggestionToRemove));
-    if (allProductSuggestions.includes(suggestionToRemove) && !availableSuggestions.includes(suggestionToRemove)) {
-      setAvailableSuggestions([...availableSuggestions, suggestionToRemove].sort());
-    }
-  };
-
-  // Handler for the FINAL Submit button
-  const handleFinalSubmit = async () => {
-    if (submittedSuggestions.length === 0) return;
-    setIsSubmitting(true);
-    console.log("Submitting suggestions to API:", submittedSuggestions);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    console.log("API call successful!");
-    setIsSubmitting(false);
-    setModalMessage("Thanks for your suggestions! Enter your email to get notified about new product updates."); 
-    setShowPopup(true);
-    setSubmittedSuggestions([]);
-    setAvailableSuggestions(allProductSuggestions); 
-  };
-
   // Product data 
   const products = [
     {
+      id: "soap_001",
       name: "Bar Soap",
       image: barSoapImage, 
       description: "A gentle cleansing bar.",
@@ -156,6 +113,7 @@ export default function Page() {
       votesNeeded: 250
     },
     {
+      id: "lip_001",
       name: "Lip Balm", 
       image: lipBalmImage,
       description: "Moisturizing lip care\nproduct.",
@@ -163,6 +121,7 @@ export default function Page() {
       votesNeeded: 250
     },
     {
+      id: "clean_001",
       name: "All-Purpose Cleaner", 
       image: cleanerImage,
       description: "Versatile household cleaner.",
@@ -170,6 +129,196 @@ export default function Page() {
       votesNeeded: 250
     }
   ];
+
+  // Updated handleVote function - now just shows popup
+  const handleVote = (product: ProductSuggestion) => {
+    setSelectedProduct(product);
+    setSubmittedSuggestions([product]); // Set as single suggestion
+    setModalMessage(`Thanks for your vote for ${product.name}! Get notified when this product is unlocked and ready to purchase.`);
+    setShowPopup(true);
+  };
+
+  // Handler for the FINAL Submit button
+  const handleFinalSubmit = async () => {
+    if (submittedSuggestions.length === 0) return;
+    setIsSubmitting(true);
+    
+    // Just show the popup, don't make API call yet
+    setModalMessage("Thanks for your suggestions! Enter your email to get notified about new product updates."); 
+    setShowPopup(true);
+    setIsSubmitting(false);
+  };
+
+  // Updated function to handle email submission
+  const handleEmailSubmit = async (email: string) => {
+    if (!email) {
+      setToastMessage('Please enter a valid email address');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      return;
+    }
+    
+    setIsSubmittingVote(true);
+    try {
+      // Submit each suggestion individually
+      for (const suggestion of submittedSuggestions) {
+        const response = await fetch('/api/vote', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            suggestions: [suggestion], // Send as single-item array
+            email
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to submit vote');
+        }
+
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to submit vote');
+        }
+      }
+
+      setToastMessage('Thank you! We\'ll notify you of updates.');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      setShowPopup(false);
+      setSubmittedSuggestions([]);
+      setAvailableSuggestions(allProductSuggestions);
+    } catch (error) {
+      console.error('Error submitting votes:', error);
+      setToastMessage('Failed to submit votes. Please try again.');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } finally {
+      setIsSubmittingVote(false);
+    }
+  };
+
+  // Handle closing popup without email
+  const handleClosePopup = async () => {
+    try {
+      // Submit each suggestion individually
+      for (const suggestion of submittedSuggestions) {
+        const response = await fetch('/api/vote', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            suggestions: [suggestion] // Send as single-item array
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to submit vote');
+        }
+
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to submit vote');
+        }
+      }
+
+      setToastMessage('Thank you for your suggestions!');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } catch (error) {
+      console.error('Error submitting votes:', error);
+      setToastMessage('Failed to submit votes. Please try again.');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    }
+    
+    setShowPopup(false);
+    setSubmittedSuggestions([]);
+    setAvailableSuggestions(allProductSuggestions);
+  };
+
+  // Function to add a suggestion badge
+  const addSuggestionBadge = (suggestionText: string) => {
+    const trimmed = suggestionText.trim();
+    if (!trimmed) return;
+
+    // Find the suggestion in available suggestions - using exact match or word boundary match
+    const foundSuggestion = availableSuggestions.find(s => {
+      const inputWords = trimmed.toLowerCase().split(/\s+/);
+      const nameWords = s.name.toLowerCase().split(/\s+/);
+      
+      // Check if all input words are present in the name words in sequence
+      let matchFound = false;
+      for (let i = 0; i <= nameWords.length - inputWords.length; i++) {
+        if (inputWords.every((word, j) => nameWords[i + j].includes(word))) {
+          matchFound = true;
+          break;
+        }
+      }
+      return matchFound;
+    });
+
+    if (foundSuggestion) {
+      if (!submittedSuggestions.some(s => s.id === foundSuggestion.id)) {
+        setSubmittedSuggestions([...submittedSuggestions, foundSuggestion]);
+        setAvailableSuggestions(availableSuggestions.filter(s => s.id !== foundSuggestion.id));
+        setCurrentSuggestion('');
+        setShowSuggestions(false);
+      } else {
+        setToastMessage(`"${foundSuggestion.name}" already suggested!`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        setCurrentSuggestion('');
+        setShowSuggestions(false);
+      }
+    } else {
+      setToastMessage(`Please select a product from the suggestions list`);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    }
+  };
+
+  // Handler for selecting from the dropdown
+  const handleSuggestionSelect = (suggestion: ProductSuggestion) => {
+    if (!submittedSuggestions.some(s => s.id === suggestion.id)) {
+      const newSuggestion = {
+        id: suggestion.id,
+        name: suggestion.name,
+        category: suggestion.category
+      };
+      setSubmittedSuggestions([...submittedSuggestions, newSuggestion]);
+      setAvailableSuggestions(availableSuggestions.filter(s => s.id !== suggestion.id));
+      setCurrentSuggestion('');
+      setShowSuggestions(false);
+    } else {
+      setToastMessage(`"${suggestion.name}" already suggested!`);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    }
+    inputRef.current?.focus();
+  };
+
+  // Display submitted suggestions
+  const renderSuggestionBadge = (suggestion: ProductSuggestion) => (
+    <div
+      key={suggestion.id}
+      className="bg-gray-200 text-gray-800 px-3 py-1 rounded-full flex items-center gap-2"
+    >
+      <FiTag className="w-4 h-4 text-gray-500" />
+      <span>{suggestion.name}</span>
+      <button
+        onClick={() => {
+          setAvailableSuggestions([...availableSuggestions, suggestion]);
+          setSubmittedSuggestions(submittedSuggestions.filter(s => s.id !== suggestion.id));
+        }}
+        className="text-gray-500 hover:text-gray-700"
+      >
+        <FiX className="w-4 h-4" />
+      </button>
+    </div>
+  );
 
   return (
     <main className="min-h-screen text-black px-6 md:px-8 py-8 bg-white">
@@ -213,111 +362,82 @@ export default function Page() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-4 md:px-8">
           {products.map((product) => (
             <ProductCard
-              key={product.name}
-              {...product} 
+              key={product.id}
+              {...product}
               onVote={handleVote}
             />
           ))}
         </div>
       </section>
 
-      {/* What Should We Add Next Section */}
-      <section className="mb-20 max-w-3xl mx-auto text-center px-4">
-         <h2 className="text-4xl font-bold mb-6">What Should We Add Next?</h2>
-         <p className="text-xl mb-8">
-           Suggest products below. Add multiple, then submit your list. (Press Enter to add)
-         </p>
-        <div className="max-w-xl mx-auto">
-          <div className="relative mb-4" ref={suggestionRef}> 
-            <div className="relative"> 
-              <input 
-                ref={inputRef}
-                type="text" 
-                placeholder="Suggest a product and press Enter..." 
-                className="bg-white text-black w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a3b18a] placeholder-gray-500 pr-10"
-                value={currentSuggestion}
-                onChange={(e) => {
-                  setCurrentSuggestion(e.target.value);
-                  setShowSuggestions(e.target.value.length > 0 && availableSuggestions.some(s => s.toLowerCase().includes(e.target.value.toLowerCase())));
-                }}
-                onFocus={() => {
-                  if (currentSuggestion.length > 0 && filteredSuggestions.length > 0) {
-                    setShowSuggestions(true);
-                  }
-                }}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    addSuggestionBadge(currentSuggestion);
-                  }
-                }}
-                disabled={isSubmitting}
-              />
-              {currentSuggestion.trim().length > 0 && !isSubmitting && (
-                <FiCornerDownLeft 
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none"
-                  title="Press Enter to add suggestion"
-                />
-              )}
-            </div>
-            {showSuggestions && filteredSuggestions.length > 0 && (
-              <div 
-                className="absolute z-10 mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto text-left w-full"
+      {/* Suggestions Section */}
+      <div className="relative" ref={suggestionRef}>
+        <input
+          ref={inputRef}
+          type="text"
+          value={currentSuggestion}
+          onChange={(e) => {
+            setCurrentSuggestion(e.target.value);
+            setShowSuggestions(e.target.value.length > 0);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              if (filteredSuggestions.length > 0) {
+                handleSuggestionSelect(filteredSuggestions[0]);
+              } else {
+                addSuggestionBadge(currentSuggestion);
+              }
+            }
+          }}
+          placeholder="Search for products to suggest..."
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
+        />
+
+        {showSuggestions && filteredSuggestions.length > 0 && (
+          <div className="absolute z-10 w-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200">
+            {filteredSuggestions.map((suggestion) => (
+              <button
+                key={suggestion.id}
+                onClick={() => handleSuggestionSelect(suggestion)}
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
               >
-                {filteredSuggestions.map((suggestion, index) => (
-                  <div 
-                    key={index}
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center text-black"
-                    onClick={() => handleSuggestionSelect(suggestion)}
-                  >
-                    <FiSearch className="mr-3 text-gray-500" />
-                    {suggestion}
+                <div className="flex items-center">
+                  <FiSearch className="mr-3 text-gray-500" />
+                  <div>
+                    <span className="block text-sm font-medium text-gray-900">{suggestion.name}</span>
+                    <span className="block text-sm text-gray-500">{suggestion.category}</span>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-          
-          {/* Display Badges */} 
-          <div className="flex flex-wrap gap-2 justify-center mt-4 min-h-[36px]"> 
-            {submittedSuggestions.map((suggestion, index) => (
-              <div 
-                key={index}
-                className="bg-gray-200 text-gray-800 text-sm font-medium px-3 py-1 rounded-full flex items-center gap-2 cursor-default"
-              >
-                <FiTag className="w-4 h-4 text-gray-500" />
-                <span>{suggestion}</span>
-                <button 
-                  onClick={() => !isSubmitting && removeSuggestion(suggestion)}
-                  className={`text-gray-500 hover:text-black ml-1 ${isSubmitting ? 'cursor-not-allowed' : ''}`}
-                  aria-label={`Remove ${suggestion}`}
-                  disabled={isSubmitting}
-                >
-                  <FiX className="w-4 h-4" />
-                </button>
-              </div>
+                </div>
+              </button>
             ))}
           </div>
+        )}
+      </div>
 
-          {/* Final Submit Button */} 
-          {submittedSuggestions.length > 0 && (
-            <div className="mt-6">
-              <button 
-                className="bg-green-600 hover:bg-green-700 text-white py-3 px-8 rounded-lg font-medium text-lg disabled:opacity-50 disabled:cursor-wait w-full flex items-center justify-center gap-2"
-                onClick={handleFinalSubmit}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <FiLoader className="animate-spin h-5 w-5" /> Submitting...
-                  </>
-                ) : (
-                  `Submit ${submittedSuggestions.length} Suggestion${submittedSuggestions.length > 1 ? 's' : ''}`
-                )}
-              </button>
-            </div>
-          )}
+      {/* Display submitted suggestions */}
+      <div className="flex flex-wrap gap-2 mt-4">
+        {submittedSuggestions.map(renderSuggestionBadge)}
+      </div>
+
+      {/* Final Submit Button */} 
+      {submittedSuggestions.length > 0 && (
+        <div className="mt-6">
+          <button 
+            className="bg-green-600 hover:bg-green-700 text-white py-3 px-8 rounded-lg font-medium text-lg disabled:opacity-50 disabled:cursor-wait w-full flex items-center justify-center gap-2"
+            onClick={handleFinalSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <FiLoader className="animate-spin h-5 w-5" /> Submitting...
+              </>
+            ) : (
+              `Submit ${submittedSuggestions.length} Suggestion${submittedSuggestions.length > 1 ? 's' : ''}`
+            )}
+          </button>
         </div>
-      </section>
+      )}
 
       {/* How It Works Section */}
       <section className="my-20 max-w-4xl mx-auto px-4">
@@ -366,7 +486,7 @@ export default function Page() {
 
       {/* Toast Notification */} 
       {showToast && (
-        <div className="fixed bottom-8 right-8 bg-red-600 text-white px-6 py-4 rounded-lg shadow-lg flex items-center z-50 transition-all duration-300 ease-in-out"> {/* Changed to red for errors */} 
+        <div className="fixed bottom-8 right-8 bg-gray-900 text-white px-6 py-4 rounded-lg shadow-lg flex items-center z-50 transition-all duration-300 ease-in-out">
           <FiX className="mr-2 h-5 w-5" />
           <span>{toastMessage}</span>
           <button
@@ -402,16 +522,28 @@ export default function Page() {
                 type="email" 
                 placeholder="Enter your email address" 
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
+                id="email-input"
               />
               <button 
-                className="w-full bg-gray-900 text-white py-3 rounded-lg font-medium hover:bg-gray-700"
-                onClick={() => setShowPopup(false)}
+                className="w-full bg-gray-900 text-white py-3 rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center"
+                onClick={() => {
+                  const emailInput = document.getElementById('email-input') as HTMLInputElement;
+                  handleEmailSubmit(emailInput.value);
+                }}
+                disabled={isSubmittingVote}
               >
-                Notify Me
+                {isSubmittingVote ? (
+                  <>
+                    <FiLoader className="animate-spin h-5 w-5 mr-2" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Notify Me'
+                )}
               </button>
               <button 
-                className="w-full text-gray-600 py-2 rounded-lg font-medium text-sm hover:bg-gray-100"
-                onClick={() => setShowPopup(false)}
+                className="w-full text-gray-600 py-2 rounded-lg font-medium text-sm hover:bg-gray-50"
+                onClick={handleClosePopup}
               >
                 No thanks
               </button>
