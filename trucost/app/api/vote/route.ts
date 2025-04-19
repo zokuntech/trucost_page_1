@@ -4,12 +4,16 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { suggestions, email } = body;
+    
+    // Get user agent from the request headers
+    const userAgent = request.headers.get('user-agent') || 'Unknown';
 
     // Format the data for the Lambda function - send only the first suggestion
     const suggestion = suggestions[0]; // Take the first suggestion since Lambda expects single vote
     const formattedData = {
       product_id: suggestion.id,
       product_name: suggestion.name,
+      user_agent: userAgent,
       ...(email && { email })
     };
 

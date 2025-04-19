@@ -477,8 +477,54 @@ export default function Page() {
             type="email" 
             placeholder="Enter your email" 
             className="bg-white text-black placeholder-gray-500 border border-gray-300 rounded-lg px-4 py-3 w-full sm:w-auto flex-grow focus:outline-none focus:ring-2 focus:ring-[#a3b18a]"
+            id="newsletter-email"
           />
-          <button className="bg-[#a3b18a] text-black py-3 px-6 rounded-lg font-medium hover:bg-[#8a9a5b]">
+          <button 
+            onClick={async () => {
+              const emailInput = document.getElementById('newsletter-email') as HTMLInputElement;
+              const email = emailInput.value;
+              
+              if (!email) {
+                setToastMessage('Please enter a valid email address');
+                setShowToast(true);
+                setTimeout(() => setShowToast(false), 3000);
+                return;
+              }
+
+              try {
+                const response = await fetch('/api/vote', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    suggestions: [{ category: 'Newsletter' }],
+                    email
+                  })
+                });
+
+                if (!response.ok) {
+                  throw new Error('Failed to submit email');
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                  throw new Error(data.error || 'Failed to submit email');
+                }
+
+                setToastMessage('Thank you for signing up!');
+                setShowToast(true);
+                setTimeout(() => setShowToast(false), 3000);
+                emailInput.value = ''; // Clear the input
+              } catch (error) {
+                console.error('Error submitting email:', error);
+                setToastMessage('Failed to sign up. Please try again.');
+                setShowToast(true);
+                setTimeout(() => setShowToast(false), 3000);
+              }
+            }}
+            className="bg-[#a3b18a] text-black py-3 px-6 rounded-lg font-medium hover:bg-[#8a9a5b]"
+          >
             Sign Up
           </button>
         </div>
