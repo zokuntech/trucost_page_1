@@ -1,7 +1,7 @@
 'use client'; // Required for components using hooks
 
 import React, { useState, useEffect, useRef } from 'react';
-import { FiX, FiTag, FiSearch, FiLoader, FiCornerDownLeft } from 'react-icons/fi';
+import { FiX, FiTag, FiSearch, FiLoader } from 'react-icons/fi';
 // Note: FiDownload was removed from imports as the button was commented out
 
 // Import placeholder images (Assuming assets folder is at project root)
@@ -9,9 +9,10 @@ import barSoapImage from '@/public/assets/soap.png';
 import lipBalmImage from '@/public/assets/lotion.png';
 import cleanerImage from '@/public/assets/aloe_vera.png';
 import itemsGridImage from '@/public/assets/items.png'; // Import the new grid image
+import { StaticImageData } from 'next/image';
 
 // Import product suggestions (Assuming data folder is at project root)
-import { allProductSuggestions as productSuggestions, expandedProductCategories } from './data/productSuggestions';
+import { allProductSuggestions as productSuggestions } from './data/productSuggestions';
 import { ProductSuggestion } from './types/products';
 
 // Remove incorrect type casting
@@ -21,7 +22,7 @@ const allProductSuggestions = productSuggestions;
 interface ProductCardProps {
   id: string;
   name: string;
-  image: any; // Using any temporarily for image type
+  image: StaticImageData;
   description: string;
   votesCount: number;
   votesNeeded: number;
